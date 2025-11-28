@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -20,15 +20,15 @@ export default function FarmNutrition() {
     undefined,
   )
 
-  useEffect(() => {
-    if (farmId) loadPlans()
-  }, [farmId])
-
-  const loadPlans = async () => {
+  const loadPlans = useCallback(async () => {
     if (!farmId) return
     const data = await farmService.getNutritionPlans(farmId)
     setPlans(data.plans)
-  }
+  }, [farmId])
+
+  useEffect(() => {
+    if (farmId) loadPlans()
+  }, [farmId, loadPlans])
 
   const handleSavePlan = async (plan: Partial<NutritionPlan>) => {
     if (!farmId) return

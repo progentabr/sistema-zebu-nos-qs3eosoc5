@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -9,7 +9,7 @@ import { HealthRecordModal } from '@/components/farm/sanitary/HealthRecordModal'
 import { farmService } from '@/services/farmService'
 import { HealthProtocol, HealthRecord } from '@/lib/types'
 import { useToast } from '@/hooks/use-toast'
-import { AlertTriangle, Plus, Syringe } from 'lucide-react'
+import { AlertTriangle, Syringe } from 'lucide-react'
 
 export default function FarmSanitary() {
   const { farmId } = useParams()
@@ -17,15 +17,15 @@ export default function FarmSanitary() {
   const [protocols, setProtocols] = useState<HealthProtocol[]>([])
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false)
 
-  useEffect(() => {
-    if (farmId) loadData()
-  }, [farmId])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!farmId) return
     const data = await farmService.getHealthProtocols(farmId)
     setProtocols(data.protocols)
-  }
+  }, [farmId])
+
+  useEffect(() => {
+    if (farmId) loadData()
+  }, [farmId, loadData])
 
   const handleGenerateTasks = async (season: 'dry' | 'rainy', date: Date) => {
     if (!farmId) return

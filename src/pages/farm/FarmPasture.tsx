@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -18,17 +18,17 @@ export default function FarmPasture() {
   const [selectedPasture, setSelectedPasture] = useState<Pasture | null>(null)
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false)
 
+  const loadPastures = useCallback(async () => {
+    if (!farmId) return
+    const data = await farmService.getPastures(farmId)
+    setPastures(data)
+  }, [farmId])
+
   useEffect(() => {
     if (farmId) {
       loadPastures()
     }
-  }, [farmId])
-
-  const loadPastures = async () => {
-    if (!farmId) return
-    const data = await farmService.getPastures(farmId)
-    setPastures(data)
-  }
+  }, [farmId, loadPastures])
 
   const handleAddPasture = async (pasture: Partial<Pasture>) => {
     if (!farmId) return
