@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
@@ -11,13 +12,85 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Info } from 'lucide-react'
+import { Info, Loader2 } from 'lucide-react'
+import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 
 interface PastureDetailsProps {
   data: any
 }
 
 export function PastureDetails({ data }: PastureDetailsProps) {
+  const { isLoaded, error } = useGoogleMaps()
+  const mapRef = useRef<HTMLDivElement>(null)
+  const mapInstanceRef = useRef<any>(null)
+  const polygonsRef = useRef<any[]>([])
+
+  // Default center (Uberaba-MG region as example)
+  const defaultCenter = { lat: -19.747, lng: -47.939 }
+
+  useEffect(() => {
+    if (!mapRef.current || !isLoaded) return
+
+    const google = (window as any).google
+
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = new google.maps.Map(mapRef.current, {
+        center: defaultCenter,
+        zoom: 14,
+        mapTypeId: 'satellite',
+        streetViewControl: false,
+        mapTypeControl: true,
+      })
+    }
+
+    // Clear existing polygons
+    polygonsRef.current.forEach((p) => p.setMap(null))
+    polygonsRef.current = []
+
+    // Render polygons from data.paddocks
+    if (data.paddocks) {
+      data.paddocks.forEach((pasture: any) => {
+        if (pasture.polygonGeojson) {
+          try {
+            const geoJson = JSON.parse(pasture.polygonGeojson)
+            const paths = geoJson.coordinates[0].map((coord: number[]) => ({
+              lat: coord[1],
+              lng: coord[0],
+            }))
+
+            let fillColor = '#10b981' // Default/Descanso (Green)
+            if (pasture.status === 'Ocupado') fillColor = '#ef4444' // Red
+            if (pasture.status === 'Vedado') fillColor = '#eab308' // Yellow
+            if (pasture.status === 'Manutenção') fillColor = '#6b7280' // Gray
+
+            const polygon = new google.maps.Polygon({
+              paths,
+              strokeColor: fillColor,
+              strokeOpacity: 0.8,
+              strokeWeight: 2,
+              fillColor: fillColor,
+              fillOpacity: 0.35,
+            })
+
+            const infoWindow = new google.maps.InfoWindow({
+              content: `<div style="color:black; font-weight:bold;">${pasture.name}<br/>${pasture.area} ha</div>`,
+            })
+
+            polygon.addListener('click', (e: any) => {
+              infoWindow.setPosition(e.latLng)
+              infoWindow.open(mapInstanceRef.current)
+            })
+
+            polygon.setMap(mapInstanceRef.current)
+            polygonsRef.current.push(polygon)
+          } catch (e) {
+            console.error('Error parsing geojson', e)
+          }
+        }
+      })
+    }
+  }, [isLoaded, data])
+
   return (
     <Tabs defaultValue="map" className="w-full animate-fade-in">
       <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">
@@ -44,16 +117,24 @@ export function PastureDetails({ data }: PastureDetailsProps) {
             <CardTitle>Identificação de Pastos</CardTitle>
           </CardHeader>
           <CardContent>
-            <Alert className="mb-4">
-              <Info className="h-4 w-4" />
-              <AlertTitle>Integração Google Maps</AlertTitle>
-              <AlertDescription>
-                Para habilitar o mapa interativo, configure a variável{' '}
-                <code>VITE_GOOGLE_MAPS_API_KEY</code> no arquivo .env.
-              </AlertDescription>
-            </Alert>
-            {/* Use Google Maps JavaScript API to render Polygons here */}
-            <MapPlaceholder className="h-[400px] w-full rounded-md" />
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <Info className="h-4 w-4" />
+                <AlertTitle>Erro no Mapa</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <div className="relative h-[400px] w-full rounded-md overflow-hidden border">
+              {!isLoaded && <MapPlaceholder className="h-full w-full" />}
+              {isLoaded && <div ref={mapRef} className="h-full w-full" />}
+              {!isLoaded && !error && (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/50">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              )}
+            </div>
+
             <div className="mt-4">
               <h4 className="font-semibold mb-2">Piquetes Identificados</h4>
               <div className="flex flex-wrap gap-2">
