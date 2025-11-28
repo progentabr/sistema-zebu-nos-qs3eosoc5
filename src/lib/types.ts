@@ -164,17 +164,30 @@ export interface ReproductionPlan {
   cullingList: CullingAnimal[]
 }
 
+export interface ReproductionEvent {
+  id: string
+  type: 'iatf' | 'natural' | 'weaning' | 'diagnosis'
+  date: string
+  description: string
+  status: 'pending' | 'done'
+}
+
 // Herd Types
 export interface Animal {
   id: string
   tag: string
-  category: string
-  status: 'active' | 'sold' | 'dead'
+  category:
+    | 'Vaca Prenhe'
+    | 'Vaca Vazia'
+    | 'Vaca com Bezerro'
+    | 'Novilha'
+    | 'Bezerro'
+    | 'Touro'
+  status: 'active' | 'sold' | 'dead' | 'culled'
+  birthDate?: string
+  breed?: string
   weightHistory: {
     birth?: number
-    d30?: number
-    d60?: number
-    d90?: number
     d205?: number
     current: number
     lastWeighingDate: string
@@ -186,6 +199,7 @@ export interface HerdIndices {
   pregnancyRate: number
   mortalityRate: number
   offTakeRate: number
+  averageDailyGain: number
 }
 
 export interface HerdMovement {
@@ -195,6 +209,7 @@ export interface HerdMovement {
   quantity: number
   description: string
   category: string
+  reason?: string
 }
 
 export interface HerdData {
@@ -221,11 +236,13 @@ export interface FarmTask {
   status: 'pending' | 'in_progress' | 'done'
   templateType?: 'daily_check' | 'vaccination' | 'maintenance' | 'custom'
   description?: string
+  completedAt?: string
+  notes?: string
 }
 
 export interface CostSummary {
   id: string
-  category: string
+  category: 'nutrition' | 'health' | 'labor' | 'maintenance' | 'other'
   amount: number
   date: string
   description: string
@@ -235,4 +252,10 @@ export interface AssistanceData {
   proposals: ActivityProposal[]
   tasks: FarmTask[]
   costs: CostSummary[]
+}
+
+export interface TaskTemplate {
+  id: string
+  title: string
+  items: string[]
 }

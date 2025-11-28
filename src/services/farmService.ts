@@ -12,6 +12,11 @@ import {
   HealthProtocol,
   HealthRecord,
   ActivityProposal,
+  ReproductionEvent,
+  Animal,
+  HerdMovement,
+  CostSummary,
+  TaskTemplate,
 } from '@/lib/types'
 
 // Mock Data Store
@@ -90,6 +95,72 @@ let mockHealthProtocols: HealthProtocol[] = [
   },
 ]
 
+let mockAnimals: Animal[] = [
+  {
+    id: '1',
+    tag: 'BR-001',
+    category: 'Vaca Prenhe',
+    status: 'active',
+    weightHistory: {
+      birth: 32,
+      d205: 190,
+      current: 450,
+      lastWeighingDate: '2024-05-01',
+    },
+  },
+  {
+    id: '2',
+    tag: 'BR-002',
+    category: 'Novilha',
+    status: 'active',
+    weightHistory: {
+      birth: 30,
+      d205: 180,
+      current: 320,
+      lastWeighingDate: '2024-05-10',
+    },
+  },
+  {
+    id: '3',
+    tag: 'BR-003',
+    category: 'Bezerro',
+    status: 'active',
+    weightHistory: {
+      birth: 35,
+      current: 120,
+      lastWeighingDate: '2024-05-20',
+    },
+  },
+]
+
+let mockTasks: FarmTask[] = [
+  {
+    id: '1',
+    title: 'Vacinação Aftosa',
+    assignee: 'José (Capataz)',
+    dueDate: '2024-05-30',
+    status: 'pending',
+    templateType: 'vaccination',
+  },
+]
+
+let mockCosts: CostSummary[] = [
+  {
+    id: '1',
+    category: 'nutrition',
+    amount: 1500.0,
+    date: '2024-05-01',
+    description: 'Compra de Sal Mineral',
+  },
+  {
+    id: '2',
+    category: 'health',
+    amount: 450.0,
+    date: '2024-05-05',
+    description: 'Vacinas',
+  },
+]
+
 export const farmService = {
   // Pasture Methods
   getPastures: async (farmId: string): Promise<Pasture[]> => {
@@ -117,7 +188,6 @@ export const farmService = {
   },
 
   getFarmPastureData: async (farmId: string) => {
-    // Legacy support for AdminPasture
     const pastures = await farmService.getPastures(farmId)
     return {
       paddocks: pastures,
@@ -247,32 +317,69 @@ export const farmService = {
     }
   },
 
+  scheduleReproductionEvents: async (
+    farmId: string,
+    events: Partial<ReproductionEvent>[],
+  ) => {
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    return events.map((e) => ({
+      ...e,
+      id: Math.random().toString(36).substr(2, 9),
+      status: 'pending',
+    }))
+  },
+
   // Herd
   getHerdData: async (farmId: string): Promise<HerdData> => {
     await new Promise((resolve) => setTimeout(resolve, 800))
     return {
-      animals: [
-        {
-          id: '1',
-          tag: 'BR-001',
-          category: 'Vaca Prenhe',
-          status: 'active',
-          weightHistory: {
-            birth: 32,
-            d205: 190,
-            current: 450,
-            lastWeighingDate: '2024-05-01',
-          },
-        },
-      ],
+      animals: mockAnimals,
       indices: {
         birthRate: 82.5,
         pregnancyRate: 88.0,
         mortalityRate: 2.1,
         offTakeRate: 22.5,
+        averageDailyGain: 0.65,
       },
       movements: [],
     }
+  },
+
+  recordWeighing: async (
+    farmId: string,
+    weighing: { animalId: string; weight: number; date: string },
+  ) => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    mockAnimals = mockAnimals.map((a) => {
+      if (a.id === weighing.animalId) {
+        return {
+          ...a,
+          weightHistory: {
+            ...a.weightHistory,
+            current: weighing.weight,
+            lastWeighingDate: weighing.date,
+          },
+        }
+      }
+      return a
+    })
+    return true
+  },
+
+  getZootIndexes: async (farmId: string) => {
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    return {
+      birthRate: 82.5,
+      pregnancyRate: 88.0,
+      mortalityRate: 2.1,
+      offTakeRate: 22.5,
+      averageDailyGain: 0.65,
+    }
+  },
+
+  registerMovement: async (farmId: string, movement: Partial<HerdMovement>) => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { ...movement, id: Math.random().toString(36).substr(2, 9) }
   },
 
   // Assistance
@@ -288,16 +395,26 @@ export const farmService = {
         status: 'pending',
         createdAt: '2024-05-25',
       },
+      {
+        id: '2',
+        title: 'Compra de Sal Mineral',
+        description: 'Estoque baixo, previsão de término em 15 dias.',
+        priority: 'medium',
+        status: 'pending',
+        createdAt: '2024-05-26',
+      },
     ]
   },
 
   createTask: async (farmId: string, task: Partial<FarmTask>) => {
     await new Promise((resolve) => setTimeout(resolve, 800))
-    return {
+    const newTask = {
       id: Math.random().toString(36).substr(2, 9),
       ...task,
       status: 'pending',
     } as FarmTask
+    mockTasks.push(newTask)
+    return newTask
   },
 
   getAssistanceData: async (farmId: string): Promise<AssistanceData> => {
@@ -305,17 +422,48 @@ export const farmService = {
     const proposals = await farmService.getActivityProposals(farmId)
     return {
       proposals,
-      tasks: [
-        {
-          id: '1',
-          title: 'Vacinação Aftosa',
-          assignee: 'José (Capataz)',
-          dueDate: '2024-05-30',
-          status: 'pending',
-          templateType: 'vaccination',
-        },
-      ],
-      costs: [],
+      tasks: mockTasks,
+      costs: mockCosts,
     }
+  },
+
+  getCosts: async (farmId: string): Promise<CostSummary[]> => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return mockCosts
+  },
+
+  saveCost: async (farmId: string, cost: Partial<CostSummary>) => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    const newCost = {
+      ...cost,
+      id: Math.random().toString(36).substr(2, 9),
+    } as CostSummary
+    mockCosts.push(newCost)
+    return newCost
+  },
+
+  getDailyTaskTemplates: async (): Promise<TaskTemplate[]> => {
+    await new Promise((resolve) => setTimeout(resolve, 300))
+    return [
+      {
+        id: '1',
+        title: 'Ronda Diária',
+        items: [
+          'Verificar cochos',
+          'Verificar bebedouros',
+          'Contagem de animais',
+          'Verificar cercas',
+        ],
+      },
+      {
+        id: '2',
+        title: 'Manutenção de Cerca',
+        items: [
+          'Verificar tensão dos fios',
+          'Trocar isoladores quebrados',
+          'Limpar aceiro',
+        ],
+      },
+    ]
   },
 }
