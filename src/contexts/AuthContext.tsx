@@ -49,8 +49,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(authUser)
       localStorage.setItem('zebu_user', JSON.stringify(authUser))
       return authUser
-    } catch (error) {
-      throw error
     } finally {
       setIsLoading(false)
     }
