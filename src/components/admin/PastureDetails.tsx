@@ -15,6 +15,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Info, Loader2 } from 'lucide-react'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 
+// Default center (Uberaba-MG region as example)
+const defaultCenter = { lat: -19.747, lng: -47.939 }
+
 interface PastureDetailsProps {
   data: any
 }
@@ -24,9 +27,6 @@ export function PastureDetails({ data }: PastureDetailsProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
   const polygonsRef = useRef<any[]>([])
-
-  // Default center (Uberaba-MG region as example)
-  const defaultCenter = { lat: -19.747, lng: -47.939 }
 
   useEffect(() => {
     if (!mapRef.current || !isLoaded) return

@@ -6,6 +6,9 @@ import { Info, Loader2, MapPin, Eraser } from 'lucide-react'
 import { Pasture } from '@/lib/types'
 import { useGoogleMaps } from '@/hooks/useGoogleMaps'
 
+// Default center (Uberaba-MG region as example)
+const defaultCenter = { lat: -19.747, lng: -47.939 }
+
 interface PastureMapProps {
   pastures: Pasture[]
   onAddPasture: (pasture: Partial<Pasture>) => void
@@ -18,9 +21,6 @@ export function PastureMap({ pastures, onAddPasture }: PastureMapProps) {
   const drawingManagerRef = useRef<any>(null)
   const polygonsRef = useRef<any[]>([])
   const [isDrawing, setIsDrawing] = useState(false)
-
-  // Default center (Uberaba-MG region as example)
-  const defaultCenter = { lat: -19.747, lng: -47.939 }
 
   const initMap = useCallback(() => {
     if (!mapRef.current || !isLoaded) return
