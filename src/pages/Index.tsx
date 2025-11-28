@@ -2,17 +2,17 @@ import { Hero } from '@/components/home/Hero'
 import { HeroWeather } from '@/components/home/HeroWeather'
 import { HeroCommodities } from '@/components/home/HeroCommodities'
 
+const weatherLocations = [
+  'Brasília',
+  'São Paulo',
+  'Belo Horizonte',
+  'Porto Alegre',
+  'Salvador',
+]
+
+const commodityItems = ['arroba_boi', 'soja', 'milho']
+
 export default function Index() {
-  const weatherLocations = [
-    'Brasília',
-    'São Paulo',
-    'Belo Horizonte',
-    'Porto Alegre',
-    'Salvador',
-  ]
-
-  const commodityItems = ['arroba_boi', 'soja', 'milho']
-
   return (
     <div className="flex flex-col min-h-screen">
       <Hero />

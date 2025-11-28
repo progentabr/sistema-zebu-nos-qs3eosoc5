@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   TrendingUp,
@@ -24,7 +24,7 @@ export function HeroCommodities({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchPrices = async () => {
+  const fetchPrices = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -35,13 +35,13 @@ export function HeroCommodities({
     } finally {
       setLoading(false)
     }
-  }
+  }, [items])
 
   useEffect(() => {
     fetchPrices()
     const interval = setInterval(fetchPrices, refreshInterval)
     return () => clearInterval(interval)
-  }, [JSON.stringify(items), refreshInterval])
+  }, [fetchPrices, refreshInterval])
 
   const getTrendIcon = (variation: number) => {
     if (variation > 0) return <TrendingUp className="h-4 w-4 text-green-500" />

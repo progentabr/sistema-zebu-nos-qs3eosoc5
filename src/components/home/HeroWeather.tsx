@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   CloudSun,
@@ -26,7 +26,7 @@ export function HeroWeather({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchWeather = async () => {
+  const fetchWeather = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -37,7 +37,7 @@ export function HeroWeather({
     } finally {
       setLoading(false)
     }
-  }
+  }, [locations])
 
   useEffect(() => {
     fetchWeather()
@@ -47,7 +47,7 @@ export function HeroWeather({
     }, refreshInterval)
 
     return () => clearInterval(interval)
-  }, [JSON.stringify(locations), refreshInterval])
+  }, [fetchWeather, refreshInterval])
 
   const getWeatherIcon = (condition: string) => {
     switch (condition) {
