@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -41,7 +41,7 @@ export default function AdminFarms() {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  const fetchFarms = async () => {
+  const fetchFarms = useCallback(async () => {
     setLoading(true)
     try {
       const response = await adminService.listFarms(1, debouncedSearch)
@@ -55,11 +55,11 @@ export default function AdminFarms() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [debouncedSearch, toast])
 
   useEffect(() => {
     fetchFarms()
-  }, [debouncedSearch])
+  }, [fetchFarms])
 
   const handleSave = async (farmData: Partial<Farm>) => {
     try {
