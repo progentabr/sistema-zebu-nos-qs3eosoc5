@@ -5,7 +5,7 @@ export interface User {
   email: string
   name: string
   role: UserRole
-  farmIds?: string[] // For farm users
+  farmIds?: string[]
 }
 
 export interface Farm {
@@ -43,12 +43,44 @@ export interface CommodityPrice {
   unit: string
   variation: number
   source: string
-  date: string // reference_date
+  date: string
 }
 
+// Pasture Types
+export interface Pasture {
+  id: string
+  name: string
+  area: number // ha
+  capacity: number // UA/ha
+  status: 'Ocupado' | 'Descanso' | 'Vedado' | 'Manutenção'
+  polygonGeojson?: string
+  productivity: {
+    msPerHa: number
+    lastMeasurement: string
+  }
+  schedule: {
+    date: string
+    action: string
+    animalCount: number
+  }[]
+  maintenance: {
+    id: string
+    item: string
+    status: 'pending' | 'done'
+    date: string
+  }[]
+  creepFeeding: boolean
+  vedacao?: {
+    startDate: string
+    endDate: string
+    active: boolean
+  }
+}
+
+// Nutrition Types
 export interface NutritionPlan {
   id: string
-  category: string // e.g., 'Bezerros', 'Matrizes'
+  category: string
   season: 'dry' | 'rainy' | 'transition'
   strategy: string
   supplementation: string
@@ -64,12 +96,23 @@ export interface NutritionProposal {
   status: 'proposed' | 'approved' | 'rejected'
 }
 
+export interface CreepFeedingRecord {
+  id: string
+  date: string
+  product: string
+  amount: number // kg
+  cost: number
+  paddockId?: string
+}
+
 export interface NutritionData {
   plans: NutritionPlan[]
   proposals: NutritionProposal[]
   creepFeedingInfo: string
+  records?: CreepFeedingRecord[]
 }
 
+// Sanitary Types
 export interface HealthProtocol {
   id: string
   type: 'vaccination' | 'deworming' | 'tick_control' | 'exam'
@@ -78,12 +121,24 @@ export interface HealthProtocol {
   season?: 'dry' | 'rainy'
   status: 'pending' | 'done' | 'delayed'
   observation?: string
+  recurring?: boolean
+}
+
+export interface HealthRecord {
+  id: string
+  date: string
+  animalId?: string
+  product: string
+  dose: string
+  cost: number
+  notes: string
 }
 
 export interface SanitaryData {
   adoptedControl: string
   protocols: HealthProtocol[]
   observations: string
+  records?: HealthRecord[]
 }
 
 // Reproduction Types
@@ -98,12 +153,12 @@ export interface ReproductionPlan {
   breedingSeason: {
     start: string
     end: string
-    method: string // e.g., 'IATF + Repasse'
+    method: string
   }
   traditionalWeaning: boolean
   heiferPlan: {
-    entryAge: number // months
-    entryWeight: number // kg
+    entryAge: number
+    entryWeight: number
     target: string
   }
   cullingList: CullingAnimal[]
@@ -113,14 +168,14 @@ export interface ReproductionPlan {
 export interface Animal {
   id: string
   tag: string
-  category: string // e.g., 'Vaca Prenhe', 'Bezerro', 'Novilha'
+  category: string
   status: 'active' | 'sold' | 'dead'
   weightHistory: {
     birth?: number
     d30?: number
     d60?: number
     d90?: number
-    d205?: number // Weaning
+    d205?: number
     current: number
     lastWeighingDate: string
   }
@@ -130,7 +185,7 @@ export interface HerdIndices {
   birthRate: number
   pregnancyRate: number
   mortalityRate: number
-  offTakeRate: number // Taxa de desfrute
+  offTakeRate: number
 }
 
 export interface HerdMovement {

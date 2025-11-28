@@ -6,84 +6,162 @@ import {
   HerdData,
   AssistanceData,
   FarmTask,
+  Pasture,
+  NutritionPlan,
+  CreepFeedingRecord,
+  HealthProtocol,
+  HealthRecord,
+  ActivityProposal,
 } from '@/lib/types'
 
+// Mock Data Store
+let mockPastures: Pasture[] = [
+  {
+    id: '1',
+    name: 'Pasto 1',
+    area: 15,
+    capacity: 1.2,
+    status: 'Ocupado',
+    productivity: { msPerHa: 4500, lastMeasurement: '2024-05-15' },
+    schedule: [
+      { date: '2024-06-01', action: 'Entrada Lote A', animalCount: 20 },
+    ],
+    maintenance: [
+      {
+        id: 'm1',
+        item: 'Adubação de cobertura',
+        status: 'pending',
+        date: '2024-09-01',
+      },
+    ],
+    creepFeeding: true,
+    vedacao: { startDate: '', endDate: '', active: false },
+  },
+  {
+    id: '2',
+    name: 'Pasto 2',
+    area: 20,
+    capacity: 1.0,
+    status: 'Descanso',
+    productivity: { msPerHa: 5000, lastMeasurement: '2024-04-10' },
+    schedule: [],
+    maintenance: [],
+    creepFeeding: false,
+    vedacao: { startDate: '2024-05-01', endDate: '2024-08-01', active: true },
+  },
+]
+
+let mockNutritionPlans: NutritionPlan[] = [
+  {
+    id: '1',
+    category: 'Bezerros',
+    season: 'dry',
+    strategy: 'Creep Feeding',
+    supplementation: 'Ração 18% PB',
+    creepFeeding: true,
+  },
+  {
+    id: '2',
+    category: 'Matrizes',
+    season: 'dry',
+    strategy: 'Manutenção',
+    supplementation: 'Sal Ureado',
+    creepFeeding: false,
+  },
+]
+
+let mockHealthProtocols: HealthProtocol[] = [
+  {
+    id: '1',
+    type: 'vaccination',
+    name: 'Febre Aftosa',
+    date: '2024-05-01',
+    status: 'done',
+    observation: 'Campanha oficial Maio',
+  },
+  {
+    id: '2',
+    type: 'deworming',
+    name: 'Vermifugação Estratégica',
+    date: '2024-05-10',
+    season: 'dry',
+    status: 'done',
+    observation: 'Entrada da seca',
+  },
+]
+
 export const farmService = {
-  getFarmPastureData: async (farmId: string) => {
+  // Pasture Methods
+  getPastures: async (farmId: string): Promise<Pasture[]> => {
     await new Promise((resolve) => setTimeout(resolve, 600))
+    return mockPastures
+  },
+
+  savePasture: async (farmId: string, pasture: Partial<Pasture>) => {
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    if (pasture.id) {
+      mockPastures = mockPastures.map((p) =>
+        p.id === pasture.id ? { ...p, ...pasture } : p,
+      )
+    } else {
+      const newPasture = {
+        ...pasture,
+        id: Math.random().toString(36).substr(2, 9),
+        schedule: [],
+        maintenance: [],
+        productivity: { msPerHa: 0, lastMeasurement: new Date().toISOString() },
+      } as Pasture
+      mockPastures.push(newPasture)
+    }
+    return pasture
+  },
+
+  getFarmPastureData: async (farmId: string) => {
+    // Legacy support for AdminPasture
+    const pastures = await farmService.getPastures(farmId)
     return {
-      paddocks: [
-        { id: 1, name: 'Pasto 1', area: 15, capacity: 1.2, status: 'Ocupado' },
-        { id: 2, name: 'Pasto 2', area: 20, capacity: 1.0, status: 'Descanso' },
-        { id: 3, name: 'Pasto 3', area: 12, capacity: 1.5, status: 'Vedado' },
-      ],
+      paddocks: pastures,
       productivity: {
         msPerHa: 4500,
         lastMeasurement: '2024-05-15',
       },
-      schedule: [
-        { date: '2024-06-01', action: 'Entrada Lote A', paddock: 'Pasto 2' },
-        { date: '2024-06-15', action: 'Saída Lote B', paddock: 'Pasto 1' },
-      ],
-      maintenance: [
-        {
-          item: 'Adubação de cobertura',
-          status: 'pending',
-          date: '2024-09-01',
-        },
-        { item: 'Controle de invasoras', status: 'done', date: '2024-04-10' },
-      ],
-      creepFeeding: true,
+      schedule: pastures.flatMap((p) =>
+        p.schedule.map((s) => ({ ...s, paddock: p.name })),
+      ),
+      maintenance: pastures.flatMap((p) => p.maintenance),
+      creepFeeding: pastures.some((p) => p.creepFeeding),
       rotationPlan: 'Rotacionado intensivo com 30 dias de descanso.',
       vedacao: {
         startDate: '2024-05-01',
         endDate: '2024-08-01',
-        paddocks: ['Pasto 3'],
+        paddocks: pastures.filter((p) => p.vedacao?.active).map((p) => p.name),
       },
     }
   },
 
+  // Nutrition Methods
   getNutritionPlans: async (farmId: string): Promise<NutritionData> => {
     await new Promise((resolve) => setTimeout(resolve, 600))
     return {
-      plans: [
-        {
-          id: '1',
-          category: 'Bezerros',
-          season: 'dry',
-          strategy: 'Creep Feeding',
-          supplementation: 'Ração 18% PB',
-          creepFeeding: true,
-        },
-        {
-          id: '2',
-          category: 'Matrizes',
-          season: 'dry',
-          strategy: 'Manutenção',
-          supplementation: 'Sal Ureado',
-          creepFeeding: false,
-        },
-        {
-          id: '3',
-          category: 'Recria',
-          season: 'rainy',
-          strategy: 'Ganho de Peso',
-          supplementation: 'Sal Mineral 80g P',
-          creepFeeding: false,
-        },
-      ],
-      proposals: [
-        {
-          id: '1',
-          title: 'Ajuste Proteico Seca',
-          description: 'Aumentar ureia para lote de fundo.',
-          mixture: 'Milho 60%, Farelo Soja 30%, Núcleo 10%',
-          createdAt: '2024-05-20',
-          status: 'proposed',
-        },
-      ],
+      plans: mockNutritionPlans,
+      proposals: [],
       creepFeedingInfo:
-        'Estruturas de Creep Feeding disponíveis nos pastos 1, 2 e 4. Consumo médio de 0.5% PV.',
+        'Estruturas de Creep Feeding disponíveis. Consumo médio de 0.5% PV.',
+      records: [],
+    }
+  },
+
+  saveNutritionPlan: async (farmId: string, plan: Partial<NutritionPlan>) => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    if (plan.id) {
+      mockNutritionPlans = mockNutritionPlans.map((p) =>
+        p.id === plan.id ? { ...p, ...plan } : p,
+      )
+    } else {
+      mockNutritionPlans.push({
+        ...plan,
+        id: Math.random().toString(36).substr(2, 9),
+      } as NutritionPlan)
     }
   },
 
@@ -100,50 +178,47 @@ export const farmService = {
     }
   },
 
+  saveCreepFeedingRecord: async (
+    farmId: string,
+    record: Partial<CreepFeedingRecord>,
+  ) => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { ...record, id: Math.random().toString(36).substr(2, 9) }
+  },
+
+  // Sanitary Methods
   getHealthProtocols: async (farmId: string): Promise<SanitaryData> => {
     await new Promise((resolve) => setTimeout(resolve, 600))
     return {
       adoptedControl:
         'Controle estratégico de parasitas com base em OPG e calendário oficial de vacinação.',
-      protocols: [
-        {
-          id: '1',
-          type: 'vaccination',
-          name: 'Febre Aftosa',
-          date: '2024-05-01',
-          status: 'done',
-          observation: 'Campanha oficial Maio',
-        },
-        {
-          id: '2',
-          type: 'vaccination',
-          name: 'Brucelose',
-          date: '2024-06-15',
-          status: 'pending',
-          observation: 'Fêmeas de 3 a 8 meses',
-        },
-        {
-          id: '3',
-          type: 'deworming',
-          name: 'Vermifugação Estratégica',
-          date: '2024-05-10',
-          season: 'dry',
-          status: 'done',
-          observation: 'Entrada da seca',
-        },
-        {
-          id: '4',
-          type: 'tick_control',
-          name: 'Banho Carrapaticida',
-          date: '2024-10-15',
-          season: 'rainy',
-          status: 'pending',
-          observation: 'Início das águas',
-        },
-      ],
-      observations:
-        'Rebanho com bom estado sanitário geral. Atenção para casos isolados de tristeza parasitária no lote de compra recente.',
+      protocols: mockHealthProtocols,
+      observations: 'Rebanho com bom estado sanitário geral.',
+      records: [],
     }
+  },
+
+  saveHealthProtocol: async (
+    farmId: string,
+    protocol: Partial<HealthProtocol>,
+  ) => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    if (protocol.id) {
+      mockHealthProtocols = mockHealthProtocols.map((p) =>
+        p.id === protocol.id ? { ...p, ...protocol } : p,
+      )
+    } else {
+      mockHealthProtocols.push({
+        ...protocol,
+        id: Math.random().toString(36).substr(2, 9),
+        status: 'pending',
+      } as HealthProtocol)
+    }
+  },
+
+  recordHealthAction: async (farmId: string, record: Partial<HealthRecord>) => {
+    await new Promise((resolve) => setTimeout(resolve, 500))
+    return { ...record, id: Math.random().toString(36).substr(2, 9) }
   },
 
   // Reproduction
@@ -168,18 +243,6 @@ export const farmService = {
           reason: 'Idade avançada / Falha dentição',
           age: 12,
         },
-        {
-          id: '2',
-          tag: 'BR-3044',
-          reason: 'Vazia por 2 estações consecutivas',
-          age: 6,
-        },
-        {
-          id: '3',
-          tag: 'BR-5012',
-          reason: 'Problema de casco crônico',
-          age: 5,
-        },
       ],
     }
   },
@@ -201,41 +264,6 @@ export const farmService = {
             lastWeighingDate: '2024-05-01',
           },
         },
-        {
-          id: '2',
-          tag: 'BR-002',
-          category: 'Novilha',
-          status: 'active',
-          weightHistory: {
-            birth: 30,
-            d205: 185,
-            current: 310,
-            lastWeighingDate: '2024-05-01',
-          },
-        },
-        {
-          id: '3',
-          tag: 'BR-003',
-          category: 'Bezerro',
-          status: 'active',
-          weightHistory: {
-            birth: 35,
-            current: 120,
-            lastWeighingDate: '2024-05-15',
-          },
-        },
-        {
-          id: '4',
-          tag: 'BR-004',
-          category: 'Touro',
-          status: 'active',
-          weightHistory: {
-            birth: 38,
-            d205: 210,
-            current: 850,
-            lastWeighingDate: '2024-04-20',
-          },
-        },
       ],
       indices: {
         birthRate: 82.5,
@@ -243,24 +271,7 @@ export const farmService = {
         mortalityRate: 2.1,
         offTakeRate: 22.5,
       },
-      movements: [
-        {
-          id: '1',
-          date: '2024-05-10',
-          type: 'entry',
-          quantity: 15,
-          description: 'Compra de Bezerros',
-          category: 'Bezerro',
-        },
-        {
-          id: '2',
-          date: '2024-04-20',
-          type: 'exit',
-          quantity: 10,
-          description: 'Venda de Vacas Descarte',
-          category: 'Vaca',
-        },
-      ],
+      movements: [],
     }
   },
 
@@ -276,15 +287,6 @@ export const farmService = {
         priority: 'high',
         status: 'pending',
         createdAt: '2024-05-25',
-      },
-      {
-        id: '2',
-        title: 'Ajuste de Lotação',
-        description:
-          'Reduzir carga animal no módulo 2 devido à baixa pluviosidade.',
-        priority: 'medium',
-        status: 'approved',
-        createdAt: '2024-05-20',
       },
     ]
   },
@@ -312,38 +314,8 @@ export const farmService = {
           status: 'pending',
           templateType: 'vaccination',
         },
-        {
-          id: '2',
-          title: 'Ronda Semanal',
-          assignee: 'Pedro',
-          dueDate: '2024-05-28',
-          status: 'done',
-          templateType: 'daily_check',
-        },
       ],
-      costs: [
-        {
-          id: '1',
-          category: 'Nutrição',
-          amount: 15000,
-          date: '2024-05-01',
-          description: 'Compra de Sal Mineral',
-        },
-        {
-          id: '2',
-          category: 'Sanitário',
-          amount: 3500,
-          date: '2024-05-05',
-          description: 'Vacinas e Vermífugos',
-        },
-        {
-          id: '3',
-          category: 'Mão de Obra',
-          amount: 8000,
-          date: '2024-05-05',
-          description: 'Pagamento Mensal',
-        },
-      ],
+      costs: [],
     }
   },
 }
