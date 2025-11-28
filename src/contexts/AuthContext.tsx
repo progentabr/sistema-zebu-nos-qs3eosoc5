@@ -1,10 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { User, UserRole } from '@/lib/types'
 import { useNavigate } from 'react-router-dom'
+import { supabaseClient } from '@/services/supabaseClient'
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, role: UserRole) => Promise<void>
+  login: (
+    email: string,
+    password: string,
+    role: UserRole,
+    cpfCnpj?: string,
+  ) => Promise<User | null>
   logout: () => void
   isLoading: boolean
 }
@@ -25,32 +31,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  const login = async (email: string, role: UserRole) => {
+  const login = async (
+    email: string,
+    password: string,
+    role: UserRole,
+    cpfCnpj?: string,
+  ) => {
     setIsLoading(true)
-    // Mock login delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    try {
+      const { user: authUser } = await supabaseClient.authSignIn(
+        email,
+        password,
+        role,
+        cpfCnpj,
+      )
 
-    const mockUser: User = {
-      id: '123',
-      email,
-      name: email.split('@')[0],
-      role,
-      farmIds: role === 'farm' ? ['1', '2'] : undefined,
-    }
-
-    setUser(mockUser)
-    localStorage.setItem('zebu_user', JSON.stringify(mockUser))
-    setIsLoading(false)
-
-    if (role === 'admin') {
-      navigate('/admin/dashboard')
-    } else {
-      // In a real app, show farm selector if multiple. Here default to first.
-      navigate(`/farm/${mockUser.farmIds?.[0] || '1'}/dashboard`)
+      setUser(authUser)
+      localStorage.setItem('zebu_user', JSON.stringify(authUser))
+      return authUser
+    } catch (error) {
+      throw error
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    await supabaseClient.authSignOut()
     setUser(null)
     localStorage.removeItem('zebu_user')
     navigate('/')

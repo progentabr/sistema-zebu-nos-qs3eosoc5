@@ -1,6 +1,4 @@
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { LoginModal } from '@/components/auth/LoginModal'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   DropdownMenu,
@@ -14,7 +12,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Link } from 'react-router-dom'
 
 export function Header() {
-  const [isLoginOpen, setIsLoginOpen] = useState(false)
   const { user, logout } = useAuth()
 
   return (
@@ -30,7 +27,7 @@ export function Header() {
         </Link>
 
         <div className="flex items-center gap-4">
-          {user ? (
+          {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -74,14 +71,9 @@ export function Header() {
                 <DropdownMenuItem onClick={logout}>Sair</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          ) : (
-            <Button onClick={() => setIsLoginOpen(true)} variant="outline">
-              Entrar
-            </Button>
           )}
         </div>
       </div>
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
     </header>
   )
 }

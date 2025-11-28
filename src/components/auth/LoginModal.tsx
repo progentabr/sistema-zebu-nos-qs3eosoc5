@@ -19,14 +19,18 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/hooks/use-toast'
+import { useNavigate } from 'react-router-dom'
+import { mockFarms } from '@/services/mockService'
+import { User } from '@/lib/types'
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
   password: z.string().min(6, { message: 'Mínimo 6 caracteres' }),
-  role: z.enum(['admin', 'farm'], { required_error: 'Selecione um perfil' }),
+  role: z.enum(['admin', 'farm']),
+  cpfCnpj: z.string().optional(),
 })
 
 interface LoginModalProps {
@@ -37,7 +41,10 @@ interface LoginModalProps {
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
   const { login } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
+  const [step, setStep] = useState<'login' | 'farm-select'>('login')
+  const [authenticatedUser, setAuthenticatedUser] = useState<User | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -45,101 +52,230 @@ export function LoginModal({ isOpen, onClose }: LoginModalProps) {
       email: '',
       password: '',
       role: 'farm',
+      cpfCnpj: '',
     },
   })
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const handleLogin = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
     try {
-      await login(values.email, values.role)
-      toast({
-        title: 'Login realizado com sucesso!',
-        description: `Bem-vindo de volta.`,
-      })
-      onClose()
-    } catch (error) {
+      const user = await login(
+        values.email,
+        values.password,
+        values.role,
+        values.cpfCnpj,
+      )
+
+      if (user) {
+        if (user.role === 'admin') {
+          toast({
+            title: 'Login realizado',
+            description: 'Bem-vindo, Administrador.',
+          })
+          navigate('/admin/dashboard')
+          onClose()
+        } else {
+          // Farm role
+          if (user.farmIds && user.farmIds.length > 1) {
+            setAuthenticatedUser(user)
+            setStep('farm-select')
+          } else {
+            const farmId = user.farmIds?.[0] || '1'
+            toast({
+              title: 'Login realizado',
+              description: `Bem-vindo, ${user.name}.`,
+            })
+            navigate(`/farm/${farmId}/dashboard`)
+            onClose()
+          }
+        }
+      }
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Erro ao entrar',
-        description: 'Verifique suas credenciais.',
+        description: error.message || 'Verifique suas credenciais.',
       })
     } finally {
       setIsLoading(false)
     }
   }
 
+  const handleFarmSelect = (farmId: string) => {
+    navigate(`/farm/${farmId}/dashboard`)
+    toast({
+      title: 'Fazenda selecionada',
+      description: 'Acessando dashboard...',
+    })
+    onClose()
+  }
+
+  const handleGoogleLogin = () => {
+    toast({
+      title: 'Google Login',
+      description: 'Funcionalidade em desenvolvimento.',
+    })
+  }
+
+  const handleForgotPassword = () => {
+    toast({
+      title: 'Recuperação de senha',
+      description: 'Verifique seu email.',
+    })
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          setStep('login')
+          form.reset()
+        }
+        onClose()
+      }}
+    >
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Acessar Sistema</DialogTitle>
+          <DialogTitle>
+            {step === 'login' ? 'Acessar Sistema' : 'Selecione a Fazenda'}
+          </DialogTitle>
           <DialogDescription>
-            Entre com suas credenciais para gerenciar sua fazenda ou o sistema.
+            {step === 'login'
+              ? 'Entre com suas credenciais para continuar.'
+              : 'Você possui acesso a múltiplas fazendas.'}
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Perfil de Acesso</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-row space-x-4"
-                    >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="farm" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Fazenda</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                          <RadioGroupItem value="admin" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Admin</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="seu@email.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="******" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Entrando...' : 'Entrar'}
+
+        {step === 'login' ? (
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(handleLogin)}
+              className="space-y-4"
+            >
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Perfil de Acesso</FormLabel>
+                    <FormControl>
+                      <Tabs
+                        defaultValue={field.value}
+                        onValueChange={(v) => field.onChange(v)}
+                        className="w-full"
+                      >
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="farm">Fazenda</TabsTrigger>
+                          <TabsTrigger value="admin">Admin</TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="seu@email.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="******" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="cpfCnpj"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CPF / CNPJ (Opcional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="000.000.000-00" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex flex-col gap-2 pt-2">
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Entrando...' : 'Entrar'}
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleGoogleLogin}
+                >
+                  Entrar com Google
+                </Button>
+
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-sm text-muted-foreground"
+                  onClick={handleForgotPassword}
+                >
+                  Esqueci minha senha
+                </Button>
+              </div>
+            </form>
+          </Form>
+        ) : (
+          <div className="space-y-4">
+            <div className="grid gap-2">
+              {authenticatedUser?.farmIds?.map((farmId) => {
+                const farm = mockFarms.find((f) => f.id === farmId)
+                return (
+                  <Button
+                    key={farmId}
+                    variant="outline"
+                    className="justify-start h-auto py-3 px-4"
+                    onClick={() => handleFarmSelect(farmId)}
+                  >
+                    <div className="flex flex-col items-start">
+                      <span className="font-semibold">
+                        {farm?.name || `Fazenda ${farmId}`}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {farm?.owner || 'Proprietário'}
+                      </span>
+                    </div>
+                  </Button>
+                )
+              })}
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => setStep('login')}
+              className="w-full"
+            >
+              Voltar
             </Button>
-          </form>
-        </Form>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   )
