@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { farmService } from '@/services/farmService'
 import { Farm, AssistanceData } from '@/lib/types'
@@ -13,7 +13,7 @@ export default function AdminAid() {
   )
   const [loadingData, setLoadingData] = useState(false)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!selectedFarm) return
     setLoadingData(true)
     try {
@@ -24,7 +24,7 @@ export default function AdminAid() {
     } finally {
       setLoadingData(false)
     }
-  }
+  }, [selectedFarm])
 
   useEffect(() => {
     if (!selectedFarm) {
@@ -32,7 +32,7 @@ export default function AdminAid() {
       return
     }
     loadData()
-  }, [selectedFarm])
+  }, [selectedFarm, loadData])
 
   return (
     <div className="container py-8 px-4 space-y-6">
