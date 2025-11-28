@@ -21,11 +21,18 @@ export interface Farm {
   lng?: number
 }
 
+export interface WeatherForecast {
+  day: string
+  min: number
+  max: number
+  condition: 'sunny' | 'cloudy' | 'rain' | 'storm'
+}
+
 export interface WeatherData {
   city: string
   temp: number
   condition: 'sunny' | 'cloudy' | 'rain' | 'storm'
-  forecast: { day: string; min: number; max: number }[]
+  forecast: WeatherForecast[]
   source: string
   updatedAt: string
 }
@@ -36,5 +43,5 @@ export interface CommodityPrice {
   unit: string
   variation: number
   source: string
-  date: string
+  date: string // reference_date
 }
