@@ -85,3 +85,99 @@ export interface SanitaryData {
   protocols: HealthProtocol[]
   observations: string
 }
+
+// Reproduction Types
+export interface CullingAnimal {
+  id: string
+  tag: string
+  reason: string
+  age: number
+}
+
+export interface ReproductionPlan {
+  breedingSeason: {
+    start: string
+    end: string
+    method: string // e.g., 'IATF + Repasse'
+  }
+  traditionalWeaning: boolean
+  heiferPlan: {
+    entryAge: number // months
+    entryWeight: number // kg
+    target: string
+  }
+  cullingList: CullingAnimal[]
+}
+
+// Herd Types
+export interface Animal {
+  id: string
+  tag: string
+  category: string // e.g., 'Vaca Prenhe', 'Bezerro', 'Novilha'
+  status: 'active' | 'sold' | 'dead'
+  weightHistory: {
+    birth?: number
+    d30?: number
+    d60?: number
+    d90?: number
+    d205?: number // Weaning
+    current: number
+    lastWeighingDate: string
+  }
+}
+
+export interface HerdIndices {
+  birthRate: number
+  pregnancyRate: number
+  mortalityRate: number
+  offTakeRate: number // Taxa de desfrute
+}
+
+export interface HerdMovement {
+  id: string
+  date: string
+  type: 'entry' | 'exit'
+  quantity: number
+  description: string
+  category: string
+}
+
+export interface HerdData {
+  animals: Animal[]
+  indices: HerdIndices
+  movements: HerdMovement[]
+}
+
+// Assistance Types
+export interface ActivityProposal {
+  id: string
+  title: string
+  description: string
+  priority: 'high' | 'medium' | 'low'
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: string
+}
+
+export interface FarmTask {
+  id: string
+  title: string
+  assignee: string
+  dueDate: string
+  status: 'pending' | 'in_progress' | 'done'
+  templateType?: 'daily_check' | 'vaccination' | 'maintenance' | 'custom'
+  description?: string
+}
+
+export interface CostSummary {
+  id: string
+  category: string
+  amount: number
+  date: string
+  description: string
+}
+
+export interface AssistanceData {
+  proposals: ActivityProposal[]
+  tasks: FarmTask[]
+  costs: CostSummary[]
+}
