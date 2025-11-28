@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -17,7 +17,7 @@ export default function FarmHerd() {
   const [herdData, setHerdData] = useState<HerdData | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!farmId) return
     setLoading(true)
     try {
@@ -28,11 +28,11 @@ export default function FarmHerd() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [farmId])
 
   useEffect(() => {
     loadData()
-  }, [farmId])
+  }, [loadData])
 
   const handleExport = () => {
     toast({
