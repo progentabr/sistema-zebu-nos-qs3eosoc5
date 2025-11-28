@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Menu } from 'lucide-react'
+import { Menu, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -29,7 +29,19 @@ export function Navbar() {
     <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-16 z-40 shadow-sm">
       <div className="container flex h-14 items-center px-4 justify-between md:justify-center">
         {/* Desktop Nav */}
-        <div className="hidden md:flex w-full justify-center gap-1 lg:gap-6 overflow-x-auto no-scrollbar">
+        <div className="hidden md:flex w-full justify-center gap-1 lg:gap-6 overflow-x-auto no-scrollbar items-center">
+          <Link
+            to="/"
+            className={cn(
+              'text-sm font-medium transition-all px-3 py-2 rounded-md hover:bg-accent hover:text-accent-foreground whitespace-nowrap flex items-center gap-2',
+              location.pathname === '/'
+                ? 'text-primary bg-primary/10 font-semibold'
+                : 'text-muted-foreground',
+            )}
+          >
+            <Home className="h-4 w-4" />
+            Home
+          </Link>
           {navItems.map((item) => (
             <Link
               key={item.path}
@@ -61,6 +73,19 @@ export function Navbar() {
             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
               <SheetTitle className="text-left mb-4">Navegação</SheetTitle>
               <div className="flex flex-col gap-2 mt-4">
+                <Link
+                  to="/"
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    'text-base font-medium transition-colors hover:text-primary p-3 rounded-md hover:bg-accent flex items-center gap-2',
+                    location.pathname === '/'
+                      ? 'text-primary bg-primary/10'
+                      : 'text-muted-foreground',
+                  )}
+                >
+                  <Home className="h-4 w-4" />
+                  Home
+                </Link>
                 {navItems.map((item) => (
                   <Link
                     key={item.path}
